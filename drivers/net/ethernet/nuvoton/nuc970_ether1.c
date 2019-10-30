@@ -31,13 +31,13 @@
 #include <mach/regs-gcr.h>
 
 #define DRV_MODULE_NAME		"nuc970-emc1"
-#define DRV_MODULE_VERSION	"1.1"
+#define DRV_MODULE_VERSION	"1.1.1"
 
 /* Ethernet MAC1 Registers */
 #define REG_CAMCMR		(void __iomem *)0xF0003000
 #define REG_CAMEN		(void __iomem *)0xF0003004
-#define REG_CAMM_BASE	(void __iomem *)0xF0003008
-#define REG_CAML_BASE	(void __iomem *)0xF000300c
+#define REG_CAMM_BASE		(void __iomem *)0xF0003008
+#define REG_CAML_BASE		(void __iomem *)0xF000300c
 #define REG_TXDLSA		(void __iomem *)0xF0003088
 #define REG_RXDLSA		(void __iomem *)0xF000308C
 #define REG_MCMDR		(void __iomem *)0xF0003090
@@ -63,7 +63,7 @@
 #define MCMDR_FDUP		(0x01 << 18)
 //#define MCMDR_ENMDC		(0x01 << 19)
 #define MCMDR_OPMOD		(0x01 << 20)
-#define SWR				(0x01 << 24)
+#define SWR			(0x01 << 24)
 #define MCMDR_TXON_RXON		(MCMDR_TXON | MCMDR_RXON)
 
 /* cam command register */
@@ -1080,14 +1080,17 @@ static int nuc970_mii_setup(struct net_device *dev)
 		dev_err(&pdev->dev, "mdiobus_register() failed\n");
 		goto out2;
 	}
-
+	
+	printk (KERN_ALERT "%s is rigistred; bus id %s, bus irq %i\n", ether->mii_bus->name, ether->mii_bus->id, *ether->mii_bus->irq); 	
+		
+	
 	phydev = phy_find_first(ether->mii_bus);
 	if(phydev == NULL) {
 		err = -ENODEV;
 		dev_err(&pdev->dev, "phy_find_first() failed\n");
 		goto out3;
 	}
-
+	 
 	phydev = phy_connect(dev, dev_name(&phydev->dev),
 			     &adjust_link,
 			     PHY_INTERFACE_MODE_RMII);
@@ -1100,6 +1103,7 @@ static int nuc970_mii_setup(struct net_device *dev)
 
 	phydev->supported &= PHY_BASIC_FEATURES;
 	phydev->advertising = phydev->supported;
+	printk (KERN_INFO "Success phy connection: %s %x", phydev->drv->name, phydev->phy_id);
 	ether->phy_dev = phydev;
 	ether->wol = 0;
 
@@ -1349,6 +1353,6 @@ module_init(nuc970_ether_init);
 module_exit(nuc970_ether_exit);
 
 MODULE_AUTHOR("Nuvoton Technology Corp.");
-MODULE_DESCRIPTION("NUC970/N9H30 MAC1 driver");
+MODULE_DESCRIPTION("NUC970 MAC1 driver");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:nuc970-emac1");
