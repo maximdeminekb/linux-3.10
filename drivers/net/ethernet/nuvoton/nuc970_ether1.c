@@ -1055,7 +1055,7 @@ static int nuc970_mii_setup(struct net_device *dev)
 		goto out0;
 	}
 
-	ether->mii_bus->name = "nuc970_rmii1";
+	ether->mii_bus->name = "NUC970_rmii1_bus";
 	ether->mii_bus->read = &nuc970_mdio_read;
 	ether->mii_bus->write = &nuc970_mdio_write;
 	ether->mii_bus->reset = &nuc970_mdio_reset;
@@ -1081,9 +1081,7 @@ static int nuc970_mii_setup(struct net_device *dev)
 		goto out2;
 	}
 	
-	printk (KERN_ALERT "%s is rigistred; bus id %s, bus irq %i\n", ether->mii_bus->name, ether->mii_bus->id, *ether->mii_bus->irq); 	
 		
-	
 	phydev = phy_find_first(ether->mii_bus);
 	if(phydev == NULL) {
 		err = -ENODEV;
@@ -1213,12 +1211,7 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 	netif_napi_add(dev, &ether->napi, nuc970_poll, /*16*/32);
 
 	ether_setup(dev);
-
-	if((error = nuc970_mii_setup(dev)) < 0) {
-		dev_err(&pdev->dev, "nuc970_mii_setup err\n");
-		goto err2;
-	}
-	netif_carrier_off(dev);
+	
 	error = register_netdev(dev);
 	if (error != 0) {
 		dev_err(&pdev->dev, "register_netdev() failed\n");
@@ -1226,6 +1219,22 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 		goto err2;
 	}
 
+
+	if((error = nuc970_mii_setup(dev)) < 0) {
+		dev_err(&pdev->dev, "nuc970_mii_setup err\n");
+		goto err2;
+	}
+	
+	netif_carrier_off(dev);
+	
+	netdev_info(dev, "NUC970 MAC at 0x%08lx irq %d (%pM)\n",
+		    dev->base_addr,
+		    dev->irq, dev->dev_addr);
+
+	phydev = ether->phy_dev;
+	netdev_info(dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s, irq=%d)\n",
+		    phydev->drv->name, dev_name(&phydev->dev), phydev->irq);
+	
 	return 0;
 
 err2:
