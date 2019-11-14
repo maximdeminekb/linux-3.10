@@ -1231,9 +1231,9 @@ static int nuc970_ether_probe(struct platform_device *pdev)
 		    dev->base_addr,
 		    dev->irq, dev->dev_addr);
 
-	phydev = ether->phy_dev;
-	netdev_info(dev, "attached PHY driver [%s] (mii_bus:phy_addr=%s, irq=%d)\n",
-		    phydev->drv->name, dev_name(&phydev->dev), phydev->irq);
+	
+
+
 	
 	return 0;
 
