@@ -1512,32 +1512,14 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
 /*
  * Feature set definitions
  */
-
-#define EXT4_HAS_COMPAT_FEATURE(sb,mask)			\
-	((EXT4_SB(sb)->s_es->s_feature_compat & cpu_to_le32(mask)) != 0)
-#define EXT4_HAS_RO_COMPAT_FEATURE(sb,mask)			\
-	((EXT4_SB(sb)->s_es->s_feature_ro_compat & cpu_to_le32(mask)) != 0)
-#define EXT4_HAS_INCOMPAT_FEATURE(sb,mask)			\
-	((EXT4_SB(sb)->s_es->s_feature_incompat & cpu_to_le32(mask)) != 0)
-#define EXT4_SET_COMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_compat |= cpu_to_le32(mask)
-#define EXT4_SET_RO_COMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_ro_compat |= cpu_to_le32(mask)
-#define EXT4_SET_INCOMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_incompat |= cpu_to_le32(mask)
-#define EXT4_CLEAR_COMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_compat &= ~cpu_to_le32(mask)
-#define EXT4_CLEAR_RO_COMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_ro_compat &= ~cpu_to_le32(mask)
-#define EXT4_CLEAR_INCOMPAT_FEATURE(sb,mask)			\
-	EXT4_SB(sb)->s_es->s_feature_incompat &= ~cpu_to_le32(mask)
-
 #define EXT4_FEATURE_COMPAT_DIR_PREALLOC	0x0001
 #define EXT4_FEATURE_COMPAT_IMAGIC_INODES	0x0002
 #define EXT4_FEATURE_COMPAT_HAS_JOURNAL		0x0004
 #define EXT4_FEATURE_COMPAT_EXT_ATTR		0x0008
 #define EXT4_FEATURE_COMPAT_RESIZE_INODE	0x0010
 #define EXT4_FEATURE_COMPAT_DIR_INDEX		0x0020
+#define EXT4_FEATURE_COMPAT_SPARSE_SUPER2	0x0200
+#define EXT4_FEATURE_COMPAT_STABLE_INODES	0x0800
 
 #define EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER	0x0001
 #define EXT4_FEATURE_RO_COMPAT_LARGE_FILE	0x0002
@@ -1555,6 +1537,9 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
  * GDT_CSUM bits are mutually exclusive.
  */
 #define EXT4_FEATURE_RO_COMPAT_METADATA_CSUM	0x0400
+#define EXT4_FEATURE_RO_COMPAT_READONLY		0x1000
+#define EXT4_FEATURE_RO_COMPAT_PROJECT		0x2000
+#define EXT4_FEATURE_RO_COMPAT_VERITY		0x8000
 
 #define EXT4_FEATURE_INCOMPAT_COMPRESSION	0x0001
 #define EXT4_FEATURE_INCOMPAT_FILETYPE		0x0002
@@ -1567,10 +1552,108 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
 #define EXT4_FEATURE_INCOMPAT_FLEX_BG		0x0200
 #define EXT4_FEATURE_INCOMPAT_EA_INODE		0x0400 /* EA in inode */
 #define EXT4_FEATURE_INCOMPAT_DIRDATA		0x1000 /* data in dirent */
-#define EXT4_FEATURE_INCOMPAT_BG_USE_META_CSUM	0x2000 /* use crc32c for bg */
+#define EXT4_FEATURE_INCOMPAT_CSUM_SEED		0x2000
 #define EXT4_FEATURE_INCOMPAT_LARGEDIR		0x4000 /* >2GB or 3-lvl htree */
 #define EXT4_FEATURE_INCOMPAT_INLINE_DATA	0x8000 /* data in inode */
+#define EXT4_FEATURE_INCOMPAT_ENCRYPT		0x10000
+#define EXT4_FEATURE_INCOMPAT_CASEFOLD		0x20000
 
+extern void ext4_update_dynamic_rev(struct super_block *sb);
+
+#define EXT4_FEATURE_COMPAT_FUNCS(name, flagname) \
+static inline bool ext4_has_feature_##name(struct super_block *sb) \
+{ \
+	return ((EXT4_SB(sb)->s_es->s_feature_compat & \
+		cpu_to_le32(EXT4_FEATURE_COMPAT_##flagname)) != 0); \
+} \
+static inline void ext4_set_feature_##name(struct super_block *sb) \
+{ \
+	ext4_update_dynamic_rev(sb); \
+	EXT4_SB(sb)->s_es->s_feature_compat |= \
+		cpu_to_le32(EXT4_FEATURE_COMPAT_##flagname); \
+} \
+static inline void ext4_clear_feature_##name(struct super_block *sb) \
+{ \
+	EXT4_SB(sb)->s_es->s_feature_compat &= \
+		~cpu_to_le32(EXT4_FEATURE_COMPAT_##flagname); \
+}
+
+#define EXT4_FEATURE_RO_COMPAT_FUNCS(name, flagname) \
+static inline bool ext4_has_feature_##name(struct super_block *sb) \
+{ \
+	return ((EXT4_SB(sb)->s_es->s_feature_ro_compat & \
+		cpu_to_le32(EXT4_FEATURE_RO_COMPAT_##flagname)) != 0); \
+} \
+static inline void ext4_set_feature_##name(struct super_block *sb) \
+{ \
+	ext4_update_dynamic_rev(sb); \
+	EXT4_SB(sb)->s_es->s_feature_ro_compat |= \
+		cpu_to_le32(EXT4_FEATURE_RO_COMPAT_##flagname); \
+} \
+static inline void ext4_clear_feature_##name(struct super_block *sb) \
+{ \
+	EXT4_SB(sb)->s_es->s_feature_ro_compat &= \
+		~cpu_to_le32(EXT4_FEATURE_RO_COMPAT_##flagname); \
+}
+
+#define EXT4_FEATURE_INCOMPAT_FUNCS(name, flagname) \
+static inline bool ext4_has_feature_##name(struct super_block *sb) \
+{ \
+	return ((EXT4_SB(sb)->s_es->s_feature_incompat & \
+		cpu_to_le32(EXT4_FEATURE_INCOMPAT_##flagname)) != 0); \
+} \
+static inline void ext4_set_feature_##name(struct super_block *sb) \
+{ \
+	ext4_update_dynamic_rev(sb); \
+	EXT4_SB(sb)->s_es->s_feature_incompat |= \
+		cpu_to_le32(EXT4_FEATURE_INCOMPAT_##flagname); \
+} \
+static inline void ext4_clear_feature_##name(struct super_block *sb) \
+{ \
+	EXT4_SB(sb)->s_es->s_feature_incompat &= \
+		~cpu_to_le32(EXT4_FEATURE_INCOMPAT_##flagname); \
+}
+
+EXT4_FEATURE_COMPAT_FUNCS(dir_prealloc,		DIR_PREALLOC)
+EXT4_FEATURE_COMPAT_FUNCS(imagic_inodes,	IMAGIC_INODES)
+EXT4_FEATURE_COMPAT_FUNCS(journal,		HAS_JOURNAL)
+EXT4_FEATURE_COMPAT_FUNCS(xattr,		EXT_ATTR)
+EXT4_FEATURE_COMPAT_FUNCS(resize_inode,		RESIZE_INODE)
+EXT4_FEATURE_COMPAT_FUNCS(dir_index,		DIR_INDEX)
+EXT4_FEATURE_COMPAT_FUNCS(sparse_super2,	SPARSE_SUPER2)
+EXT4_FEATURE_COMPAT_FUNCS(stable_inodes,	STABLE_INODES)
+
+EXT4_FEATURE_RO_COMPAT_FUNCS(sparse_super,	SPARSE_SUPER)
+EXT4_FEATURE_RO_COMPAT_FUNCS(large_file,	LARGE_FILE)
+EXT4_FEATURE_RO_COMPAT_FUNCS(btree_dir,		BTREE_DIR)
+EXT4_FEATURE_RO_COMPAT_FUNCS(huge_file,		HUGE_FILE)
+EXT4_FEATURE_RO_COMPAT_FUNCS(gdt_csum,		GDT_CSUM)
+EXT4_FEATURE_RO_COMPAT_FUNCS(dir_nlink,		DIR_NLINK)
+EXT4_FEATURE_RO_COMPAT_FUNCS(extra_isize,	EXTRA_ISIZE)
+EXT4_FEATURE_RO_COMPAT_FUNCS(quota,		QUOTA)
+EXT4_FEATURE_RO_COMPAT_FUNCS(bigalloc,		BIGALLOC)
+EXT4_FEATURE_RO_COMPAT_FUNCS(metadata_csum,	METADATA_CSUM)
+EXT4_FEATURE_RO_COMPAT_FUNCS(readonly,		READONLY)
+EXT4_FEATURE_RO_COMPAT_FUNCS(project,		PROJECT)
+EXT4_FEATURE_RO_COMPAT_FUNCS(verity,		VERITY)
+
+EXT4_FEATURE_INCOMPAT_FUNCS(compression,	COMPRESSION)
+EXT4_FEATURE_INCOMPAT_FUNCS(filetype,		FILETYPE)
+EXT4_FEATURE_INCOMPAT_FUNCS(journal_needs_recovery,	RECOVER)
+EXT4_FEATURE_INCOMPAT_FUNCS(journal_dev,	JOURNAL_DEV)
+EXT4_FEATURE_INCOMPAT_FUNCS(meta_bg,		META_BG)
+EXT4_FEATURE_INCOMPAT_FUNCS(extents,		EXTENTS)
+EXT4_FEATURE_INCOMPAT_FUNCS(64bit,		64BIT)
+EXT4_FEATURE_INCOMPAT_FUNCS(mmp,		MMP)
+EXT4_FEATURE_INCOMPAT_FUNCS(flex_bg,		FLEX_BG)
+EXT4_FEATURE_INCOMPAT_FUNCS(ea_inode,		EA_INODE)
+EXT4_FEATURE_INCOMPAT_FUNCS(dirdata,		DIRDATA)
+EXT4_FEATURE_INCOMPAT_FUNCS(csum_seed,		CSUM_SEED)
+EXT4_FEATURE_INCOMPAT_FUNCS(largedir,		LARGEDIR)
+EXT4_FEATURE_INCOMPAT_FUNCS(inline_data,	INLINE_DATA)
+EXT4_FEATURE_INCOMPAT_FUNCS(encrypt,		ENCRYPT)
+EXT4_FEATURE_INCOMPAT_FUNCS(casefold,		CASEFOLD)
+	
 #define EXT2_FEATURE_COMPAT_SUPP	EXT4_FEATURE_COMPAT_EXT_ATTR
 #define EXT2_FEATURE_INCOMPAT_SUPP	(EXT4_FEATURE_INCOMPAT_FILETYPE| \
 					 EXT4_FEATURE_INCOMPAT_META_BG)
