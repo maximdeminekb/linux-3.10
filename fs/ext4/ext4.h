@@ -1512,6 +1512,25 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
 /*
  * Feature set definitions
  */
+#define EXT4_HAS_COMPAT_FEATURE(sb,mask)			\
+	((EXT4_SB(sb)->s_es->s_feature_compat & cpu_to_le32(mask)) != 0)
+#define EXT4_HAS_RO_COMPAT_FEATURE(sb,mask)			\
+	((EXT4_SB(sb)->s_es->s_feature_ro_compat & cpu_to_le32(mask)) != 0)
+#define EXT4_HAS_INCOMPAT_FEATURE(sb,mask)			\
+	((EXT4_SB(sb)->s_es->s_feature_incompat & cpu_to_le32(mask)) != 0)
+#define EXT4_SET_COMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_compat |= cpu_to_le32(mask)
+#define EXT4_SET_RO_COMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_ro_compat |= cpu_to_le32(mask)
+#define EXT4_SET_INCOMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_incompat |= cpu_to_le32(mask)
+#define EXT4_CLEAR_COMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_compat &= ~cpu_to_le32(mask)
+#define EXT4_CLEAR_RO_COMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_ro_compat &= ~cpu_to_le32(mask)
+#define EXT4_CLEAR_INCOMPAT_FEATURE(sb,mask)			\
+	EXT4_SB(sb)->s_es->s_feature_incompat &= ~cpu_to_le32(mask)
+
 #define EXT4_FEATURE_COMPAT_DIR_PREALLOC	0x0001
 #define EXT4_FEATURE_COMPAT_IMAGIC_INODES	0x0002
 #define EXT4_FEATURE_COMPAT_HAS_JOURNAL		0x0004
