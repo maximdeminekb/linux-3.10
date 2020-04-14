@@ -891,7 +891,7 @@ static int nuc970_gpio_probe(struct platform_device *pdev)
 	int err;
 	struct clk *clk;
 
-	//printk("%s - pdev = %s\n", __func__, pdev->name);
+	printk("%s - pdev = %s\n", __func__, pdev->name);
 #ifndef CONFIG_OF
 	if(pdev->id == 0)
 #endif
@@ -924,6 +924,10 @@ static int nuc970_gpio_probe(struct platform_device *pdev)
 		}
 
 	}
+
+	printk(KERN_INFO "Set up PB0 as power-off gpio");
+	if(!nuc970_gpio_core_to_request(&nuc970_gpio_port, 32))
+		nuc970_gpio_core_direction_out(&nuc970_gpio_port, 32, 1);
 
 #ifdef CONFIG_OF
 	{
