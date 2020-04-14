@@ -886,12 +886,33 @@ static int nuc970_enable_eint(uint32_t flag,struct platform_device *pdev){
 }
 #endif
 
+static void gpio_poweroff_do_poweroff(void)
+{
+    int gpio_num = 32; // PB0	
+    BUG_ON(!gpio_is_valid(32));
+
+	/* drive it active, also inactive->active edge */
+	gpio_direction_output(gpio_num, 1);
+	mdelay(100);
+	/* drive inactive, also active->inactive edge */
+	gpio_set_value(gpio_num, 0);
+	mdelay(100);
+
+	/* drive it active, also inactive->active edge */
+	gpio_set_value(gpio_num, 1);
+
+	/* give it some time */
+	mdelay(3000);
+
+	WARN_ON(1);
+}
+
 static int nuc970_gpio_probe(struct platform_device *pdev)
 {
 	int err;
 	struct clk *clk;
 
-	printk("%s - pdev = %s\n", __func__, pdev->name);
+	//printk("%s - pdev = %s\n", __func__, pdev->name);
 #ifndef CONFIG_OF
 	if(pdev->id == 0)
 #endif
@@ -925,9 +946,10 @@ static int nuc970_gpio_probe(struct platform_device *pdev)
 
 	}
 
-	printk(KERN_INFO "Set up PB0 as power-off gpio");
+	/*printk(KERN_INFO "Set up PB0 as power-off gpio\n");
 	if(!nuc970_gpio_core_to_request(&nuc970_gpio_port, 32))
-		nuc970_gpio_core_direction_out(&nuc970_gpio_port, 32, 1);
+	nuc970_gpio_core_direction_out(&nuc970_gpio_port, 32, 1);*/
+    	printk(KERN_INFO "NEW VERSION 1.0\n");
 
 #ifdef CONFIG_OF
 	{
@@ -943,7 +965,7 @@ static int nuc970_gpio_probe(struct platform_device *pdev)
 	#else
 		nuc970_enable_eint(0,pdev);
 	#endif
-
+	pm_power_off = &gpio_poweroff_do_poweroff;
 	return 0;
 
  err_nuc970_gpio_port:
